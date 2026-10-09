@@ -3,24 +3,203 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Homebase</title>
-  <style>
-    body { margin: 0; font-family: Arial, "Helvetica Neue", sans-serif; background: #EAEDED; color: #0F1111; }
-    header { background: #131921; color: #fff; padding: 16px; font-size: 21px; font-weight: 700; }
-    main { padding: 16px; }
-    pre { background: #fff; border: 1px solid #D5D9D9; border-radius: 8px; padding: 16px; overflow-x: auto; }
-  </style>
+  <title>Homebase - Household Chief of Staff</title>
+  <meta name="description" content="Voice-first household assistant managing chores, groceries, schedules, and reminders via MCP over Streamable HTTP for Alexa+.">
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <header>homebase</header>
-  <main>
-    <p>Server is running. The real UI is built in Phase 3 (see brain/TASKS.md).</p>
-    <pre id="out">Loading state…</pre>
+  <!-- Header Bar (#131921) -->
+  <header class="site-header" role="banner">
+    <div class="header-container">
+      <a href="/" class="brand-logo" aria-label="Homebase homepage">
+        <span>homebase</span>
+        <span class="brand-stroke"></span>
+      </a>
+
+      <!-- Central Assistant Input Bar -->
+      <form id="assistantForm" class="assistant-bar-form" role="search" aria-label="Household assistant input">
+        <input
+          id="assistantInput"
+          class="assistant-input"
+          type="text"
+          placeholder="Ask Homebase to add, assign, or check anything"
+          aria-label="Ask Homebase to add, assign, or check anything"
+          autocomplete="off"
+        >
+        <button id="micBtn" class="header-btn mic-btn" type="button" aria-label="Start voice input" title="Voice input (Web Speech API)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" x2="12" y1="19" y2="22"></line>
+          </svg>
+        </button>
+        <button id="sendBtn" class="header-btn send-btn" type="submit" aria-label="Send" title="Send request">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </form>
+
+      <!-- Household Profile Badge -->
+      <div class="header-household" aria-label="Sharma-Rao household">
+        <span class="household-avatar" aria-hidden="true">🏡</span>
+        <div class="household-info">
+          <span class="household-line-top">Sharma-Rao</span>
+          <span class="household-line-bold">Household ▾</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sub-Navigation Strip (#232F3E) -->
+  <nav class="subnav-bar" aria-label="Dashboard sections">
+    <div class="subnav-container">
+      <div class="subnav-links">
+        <a class="subnav-item active" href="#all">All</a>
+        <a class="subnav-item" href="#chores">Chores</a>
+        <a class="subnav-item" href="#groceries">Grocery list</a>
+        <a class="subnav-item" href="#events">This week</a>
+        <a class="subnav-item" href="#reminders">Reminders</a>
+        <a class="subnav-item" href="#activity">Activity</a>
+      </div>
+      <div class="subnav-actions">
+        <button id="resetBtn" class="reset-btn" type="button" title="Reset demo seed data">Reset demo</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Greeting Banner -->
+  <section class="greeting-banner" aria-label="Household status">
+    <h1 id="greetingText" class="greeting-text">Good day, Sharma-Rao family. Loading household status…</h1>
+  </section>
+
+  <!-- Main 3-Column Content Layout -->
+  <main class="page-content" role="main">
+    <!-- Column 1: Chores & Groceries -->
+    <div class="dashboard-column">
+      <!-- Chores Card -->
+      <section id="chores" class="card" aria-labelledby="choresTitle">
+        <div class="card-header">
+          <h2 id="choresTitle" class="card-title">
+            Chores <span id="choresCount" class="badge-count">0</span>
+          </h2>
+        </div>
+        <ul id="choresList" class="items-list" aria-label="List of household chores">
+          <li class="empty-state">Loading chores…</li>
+        </ul>
+        <div class="card-actions-bar">
+          <button class="btn-primary" type="button" onclick="sendUserMessage('Add chore to vacuum the stairs with effort 2')">
+            + Add chore
+          </button>
+          <button class="btn-secondary" type="button" onclick="sendUserMessage('Assign dishes and laundry fairly this week')">
+            Rebalance fairly
+          </button>
+        </div>
+      </section>
+
+      <!-- Grocery List Card -->
+      <section id="groceries" class="card" aria-labelledby="groceriesTitle">
+        <div class="card-header">
+          <h2 id="groceriesTitle" class="card-title">
+            Grocery list <span id="groceriesCount" class="badge-count">0</span>
+          </h2>
+        </div>
+        <ul id="groceriesList" class="items-list" aria-label="List of grocery items needed">
+          <li class="empty-state">Loading grocery list…</li>
+        </ul>
+        <div class="card-actions-bar">
+          <button class="btn-primary" type="button" onclick="sendUserMessage('Add coffee beans to the grocery list')">
+            + Add item
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Column 2: Calendar & Reminders -->
+    <div class="dashboard-column">
+      <!-- Calendar Card ("This week") -->
+      <section id="events" class="card" aria-labelledby="eventsTitle">
+        <div class="card-header">
+          <h2 id="eventsTitle" class="card-title">
+            This week <span id="eventsCount" class="badge-count">0</span>
+          </h2>
+        </div>
+        <ul id="eventsList" class="items-list" aria-label="Household events this week">
+          <li class="empty-state">Loading schedule…</li>
+        </ul>
+        <div class="card-actions-bar">
+          <button class="btn-secondary" type="button" onclick="sendUserMessage('What breaks on Thursday if Dad is traveling?')">
+            Find conflicts
+          </button>
+          <button class="btn-tertiary" type="button" onclick="sendUserMessage('Schedule family movie night on Saturday at 7pm')">
+            + Add event
+          </button>
+        </div>
+      </section>
+
+      <!-- Reminders Card -->
+      <section id="reminders" class="card" aria-labelledby="remindersTitle">
+        <div class="card-header">
+          <h2 id="remindersTitle" class="card-title">Reminders</h2>
+        </div>
+        <ul id="remindersList" class="items-list" aria-label="Active reminders">
+          <li class="empty-state">No pending reminders.</li>
+        </ul>
+        <div class="card-actions-bar">
+          <button class="btn-tertiary" type="button" onclick="sendUserMessage('Remind Meera about the dentist on Thursday at 4')">
+            + Remind member
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Column 3: Assistant & Activity Panel (Sticky on Desktop) -->
+    <div class="dashboard-column sticky-column">
+      <!-- Assistant Card -->
+      <section id="assistant" class="card assistant-card" aria-labelledby="assistantCardTitle">
+        <div class="card-header">
+          <h2 id="assistantCardTitle" class="card-title">Homebase Assistant</h2>
+        </div>
+
+        <!-- Suggestion Chips -->
+        <div class="suggestion-chips" aria-label="Quick suggestion chips">
+          <button class="chip-btn" type="button" data-prompt="We're out of milk and eggs.">"We're out of milk and eggs"</button>
+          <button class="chip-btn" type="button" data-prompt="Assign dishes and laundry fairly this week.">"Assign chores fairly"</button>
+          <button class="chip-btn" type="button" data-prompt="What's happening this week?">"What's on this week?"</button>
+          <button class="chip-btn" type="button" data-prompt="Remind Meera about the dentist on Thursday at 4.">"Remind Mom about dentist"</button>
+        </div>
+
+        <!-- Live Chat Thread -->
+        <div id="chatThread" class="chat-thread" role="log" aria-live="polite" aria-label="Assistant conversation history">
+          <div class="chat-bubble assistant">
+            <div>Hello! I'm Homebase, your household assistant. Ask me to add groceries, assign chores, check your calendar, or set reminders.</div>
+          </div>
+        </div>
+
+        <div class="chat-footer">
+          <label class="speak-toggle">
+            <input type="checkbox" id="speakToggle" checked>
+            <span>Speak replies (Voice output)</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Activity Panel ("What Homebase just did") -->
+      <section id="activity" class="card activity-card" aria-labelledby="activityTitle">
+        <div class="card-header">
+          <h2 id="activityTitle" class="card-title">What Homebase just did</h2>
+        </div>
+        <div id="activityList" class="activity-list" aria-label="Live tool calls stream" aria-live="polite">
+          <div class="empty-state">Tool calls will appear here as Homebase works.</div>
+        </div>
+      </section>
+    </div>
   </main>
-  <script>
-    fetch("/api/state").then(r => r.json()).then(s => {
-      document.getElementById("out").textContent = JSON.stringify(s, null, 2);
-    });
-  </script>
+
+  <!-- Voice error toast banner -->
+  <div id="voiceErrorToast" class="voice-error-toast" role="alert"></div>
+
+  <script src="/app.js"></script>
 </body>
 </html>
