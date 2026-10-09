@@ -15,6 +15,21 @@ export function getDemoResponse(args: ChatArgs): ChatResult | null {
     if (text.includes("milk") || text.includes("eggs")) {
       return { text: "Added milk and eggs to your grocery list." };
     }
+    if (text.includes("fairly") || text.includes("rebalance")) {
+      return {
+        text: "I've rebalanced all open chores fairly across the family: Arjun (7 pts), Meera (7 pts), Riya (4 pts), and Kabir (2 pts).",
+      };
+    }
+    if (text.includes("traveling") || text.includes("break") || text.includes("conflict")) {
+      return {
+        text: "Dad's travel on Thursday creates schedule conflicts: he is double-booked between Kabir's dentist appointment and Riya's football practice pickup, and won't be able to attend either due to travel. Proposed fix: Have Meera take over both the football pickup and dentist appointment.",
+      };
+    }
+    if (text.includes("happening this week") || text.includes("weekly summary")) {
+      return {
+        text: "Here is your weekly summary: 5 events scheduled (including Thursday's conflict for Arjun between football pickup and the dentist), 8 open chores totaling 20 effort points, and 5 grocery items needed.",
+      };
+    }
     if (text.includes("chore") || text.includes("dishes") || text.includes("laundry") || text.includes("wash")) {
       return { text: "I've updated your chores on the board." };
     }
@@ -93,18 +108,16 @@ export function getDemoResponse(args: ChatArgs): ChatResult | null {
   }
 
   // Scripted Demo Prompt 2: "Assign dishes and laundry fairly this week."
-  if ((text.includes("dishes") || text.includes("laundry")) && text.includes("assign")) {
+  if (
+    (text.includes("dishes") || text.includes("laundry") || text.includes("fairly") || text.includes("rebalance")) &&
+    (text.includes("assign") || text.includes("rebalance") || text.includes("fairly"))
+  ) {
     return {
       toolCalls: [
         {
-          id: "demo_call_assign_dishes",
-          name: "assign_chore",
-          arguments: { chore_id: 7, member_name: "Riya" },
-        },
-        {
-          id: "demo_call_assign_laundry",
-          name: "assign_chore",
-          arguments: { chore_id: 4, member_name: "Arjun" },
+          id: "demo_call_rebalance_chores",
+          name: "rebalance_chores",
+          arguments: {},
         },
       ],
     };
@@ -227,7 +240,20 @@ export function getDemoResponse(args: ChatArgs): ChatResult | null {
   }
 
   // Scripted Demo Prompt 5: "What's happening this week?"
-  if (text.includes("happening this week") || text.includes("events") || text.includes("schedule")) {
+  if (text.includes("happening this week") || text.includes("weekly summary")) {
+    return {
+      toolCalls: [
+        {
+          id: "demo_call_weekly_summary",
+          name: "weekly_summary",
+          arguments: {},
+        },
+      ],
+    };
+  }
+
+  // General events or schedule query
+  if (text.includes("events") || text.includes("schedule")) {
     return {
       toolCalls: [
         {
@@ -243,7 +269,7 @@ export function getDemoResponse(args: ChatArgs): ChatResult | null {
   }
 
   // Add event
-  if (text.includes("schedule") || text.includes("soccer match")) {
+  if (text.includes("soccer match")) {
     return {
       toolCalls: [
         {
@@ -265,8 +291,8 @@ export function getDemoResponse(args: ChatArgs): ChatResult | null {
     return {
       toolCalls: [
         {
-          id: "demo_call_thursday_events",
-          name: "list_events",
+          id: "demo_call_find_conflicts_thursday",
+          name: "find_conflicts",
           arguments: {
             from: "2026-10-15T00:00:00.000Z",
             to: "2026-10-15T23:59:59.000Z",
