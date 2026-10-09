@@ -75,6 +75,7 @@ export async function chatWithProviders(args: ChatArgs): Promise<ChatResult> {
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
         if (isRateLimitOrTimeout(err)) {
+          console.warn(`[Agent] ${provider.name} error details: ${lastError.message}`);
           if (attempt === 0) {
             console.warn(`[Agent] ${provider.name} rate-limited or timed out. Retrying with backoff...`);
             await sleep(1000);

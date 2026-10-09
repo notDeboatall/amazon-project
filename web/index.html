@@ -89,10 +89,10 @@
           <li class="empty-state">Loading chores…</li>
         </ul>
         <div class="card-actions-bar">
-          <button class="btn-primary" type="button" onclick="sendUserMessage('Add chore to vacuum the stairs with effort 2')">
+          <button class="btn-primary" type="button" onclick="openModal('modalAddChore')" id="btnAddChore">
             + Add chore
           </button>
-          <button class="btn-secondary" type="button" onclick="sendUserMessage('Assign dishes and laundry fairly this week')">
+          <button class="btn-secondary" type="button" onclick="rebalanceChoresAction()" id="btnRebalance">
             Rebalance fairly
           </button>
         </div>
@@ -109,7 +109,7 @@
           <li class="empty-state">Loading grocery list…</li>
         </ul>
         <div class="card-actions-bar">
-          <button class="btn-primary" type="button" onclick="sendUserMessage('Add coffee beans to the grocery list')">
+          <button class="btn-primary" type="button" onclick="openModal('modalAddGrocery')" id="btnAddGrocery">
             + Add item
           </button>
         </div>
@@ -129,10 +129,10 @@
           <li class="empty-state">Loading schedule…</li>
         </ul>
         <div class="card-actions-bar">
-          <button class="btn-secondary" type="button" onclick="sendUserMessage('What breaks on Thursday if Dad is traveling?')">
+          <button class="btn-secondary" type="button" onclick="findConflictsAction()" id="btnFindConflicts">
             Find conflicts
           </button>
-          <button class="btn-tertiary" type="button" onclick="sendUserMessage('Schedule family movie night on Saturday at 7pm')">
+          <button class="btn-tertiary" type="button" onclick="openModal('modalAddEvent')" id="btnAddEvent">
             + Add event
           </button>
         </div>
@@ -147,7 +147,7 @@
           <li class="empty-state">No pending reminders.</li>
         </ul>
         <div class="card-actions-bar">
-          <button class="btn-tertiary" type="button" onclick="sendUserMessage('Remind Meera about the dentist on Thursday at 4')">
+          <button class="btn-tertiary" type="button" onclick="openModal('modalAddReminder')" id="btnAddReminder">
             + Remind member
           </button>
         </div>
@@ -199,6 +199,146 @@
 
   <!-- Voice error toast banner -->
   <div id="voiceErrorToast" class="voice-error-toast" role="alert"></div>
+
+  <!-- Modal: Add Chore -->
+  <dialog id="modalAddChore" class="modal-dialog" aria-labelledby="modalChoreTitle">
+    <div class="modal-header">
+      <h3 id="modalChoreTitle" class="modal-title">Add new chore</h3>
+      <button class="modal-close-btn" type="button" onclick="closeModal('modalAddChore')" aria-label="Close dialog">&times;</button>
+    </div>
+    <form id="formAddChore" class="modal-form">
+      <div class="form-group">
+        <label for="choreTitleInput">Chore title *</label>
+        <input id="choreTitleInput" class="form-input" type="text" placeholder="e.g. Wash the car, Vacuum stairs" required>
+      </div>
+      <div class="form-group">
+        <label for="choreEffortInput">Effort points (1 = light, 5 = heavy)</label>
+        <select id="choreEffortInput" class="form-select">
+          <option value="1">1 point (Quick & easy, e.g. trash)</option>
+          <option value="2" selected>2 points (Standard, e.g. dishes)</option>
+          <option value="3">3 points (Moderate, e.g. vacuuming)</option>
+          <option value="4">4 points (Substantial, e.g. deep cleaning)</option>
+          <option value="5">5 points (Heavy task, e.g. yard work)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="choreAssigneeSelect">Assignee (optional)</label>
+        <select id="choreAssigneeSelect" class="form-select">
+          <option value="">Unassigned</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="choreFrequencySelect">Frequency</label>
+        <select id="choreFrequencySelect" class="form-select">
+          <option value="weekly" selected>Weekly</option>
+          <option value="daily">Daily</option>
+          <option value="once">Once</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-tertiary" type="button" onclick="closeModal('modalAddChore')">Cancel</button>
+        <button class="btn-primary" type="submit">Add chore</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Modal: Add Grocery Item -->
+  <dialog id="modalAddGrocery" class="modal-dialog" aria-labelledby="modalGroceryTitle">
+    <div class="modal-header">
+      <h3 id="modalGroceryTitle" class="modal-title">Add to grocery list</h3>
+      <button class="modal-close-btn" type="button" onclick="closeModal('modalAddGrocery')" aria-label="Close dialog">&times;</button>
+    </div>
+    <form id="formAddGrocery" class="modal-form">
+      <div class="form-group">
+        <label for="groceryNameInput">Item name *</label>
+        <input id="groceryNameInput" class="form-input" type="text" placeholder="e.g. Greek yogurt, Sourdough bread" required>
+      </div>
+      <div class="form-group">
+        <label for="groceryQtyInput">Quantity (optional)</label>
+        <input id="groceryQtyInput" class="form-input" type="text" placeholder="e.g. 2 packs, 1 dozen, 500g">
+      </div>
+      <div class="form-group">
+        <label for="groceryCategorySelect">Category</label>
+        <select id="groceryCategorySelect" class="form-select">
+          <option value="produce">Produce</option>
+          <option value="dairy" selected>Dairy</option>
+          <option value="pantry">Pantry</option>
+          <option value="bakery">Bakery</option>
+          <option value="household">Household</option>
+          <option value="school">School / Supplies</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-tertiary" type="button" onclick="closeModal('modalAddGrocery')">Cancel</button>
+        <button class="btn-primary" type="submit">Add to list</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Modal: Add Event -->
+  <dialog id="modalAddEvent" class="modal-dialog" aria-labelledby="modalEventTitle">
+    <div class="modal-header">
+      <h3 id="modalEventTitle" class="modal-title">Schedule calendar event</h3>
+      <button class="modal-close-btn" type="button" onclick="closeModal('modalAddEvent')" aria-label="Close dialog">&times;</button>
+    </div>
+    <form id="formAddEvent" class="modal-form">
+      <div class="form-group">
+        <label for="eventTitleInput">Event title *</label>
+        <input id="eventTitleInput" class="form-input" type="text" placeholder="e.g. Pediatrician checkup, Swimming class" required>
+      </div>
+      <div class="form-group">
+        <label for="eventStartInput">Start time *</label>
+        <input id="eventStartInput" class="form-input" type="datetime-local" required>
+      </div>
+      <div class="form-group">
+        <label for="eventEndInput">End time *</label>
+        <input id="eventEndInput" class="form-input" type="datetime-local" required>
+      </div>
+      <div class="form-group">
+        <label for="eventLocationInput">Location (optional)</label>
+        <input id="eventLocationInput" class="form-input" type="text" placeholder="e.g. Community Center, Clinic">
+      </div>
+      <div class="form-group">
+        <label>Attendees *</label>
+        <div id="eventAttendeesContainer" class="attendees-checkboxes">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-tertiary" type="button" onclick="closeModal('modalAddEvent')">Cancel</button>
+        <button class="btn-primary" type="submit">Schedule event</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Modal: Add Reminder -->
+  <dialog id="modalAddReminder" class="modal-dialog" aria-labelledby="modalReminderTitle">
+    <div class="modal-header">
+      <h3 id="modalReminderTitle" class="modal-title">Set reminder</h3>
+      <button class="modal-close-btn" type="button" onclick="closeModal('modalAddReminder')" aria-label="Close dialog">&times;</button>
+    </div>
+    <form id="formAddReminder" class="modal-form">
+      <div class="form-group">
+        <label for="reminderMemberSelect">Member to remind *</label>
+        <select id="reminderMemberSelect" class="form-select" required>
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="reminderMessageInput">Reminder message *</label>
+        <input id="reminderMessageInput" class="form-input" type="text" placeholder="e.g. Call dentist, Pick up prescription" required>
+      </div>
+      <div class="form-group">
+        <label for="reminderTimeInput">Remind at (date & time) *</label>
+        <input id="reminderTimeInput" class="form-input" type="datetime-local" required>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-tertiary" type="button" onclick="closeModal('modalAddReminder')">Cancel</button>
+        <button class="btn-primary" type="submit">Set reminder</button>
+      </div>
+    </form>
+  </dialog>
 
   <script src="/app.js"></script>
 </body>

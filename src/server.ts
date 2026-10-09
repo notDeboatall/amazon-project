@@ -1,12 +1,23 @@
 import express from "express";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { existsSync } from "node:fs";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createHomebaseServer } from "./mcp/server.js";
 import { getState, listMembers } from "./db/index.js";
 import { seed } from "./db/seed.js";
 import { chatRouter } from "./api/chat.js";
 import { eventsRouter } from "./api/events.js";
+
+// Load environment variables from .env
+if (existsSync(".env")) {
+  try {
+    process.loadEnvFile(".env");
+    console.log(`[Config] Loaded .env (LLM_PROVIDER=${process.env.LLM_PROVIDER ?? "gemini"})`);
+  } catch (err) {
+    console.warn("[Config] Could not parse .env:", err);
+  }
+}
 
 const here = dirname(fileURLToPath(import.meta.url));
 const app = express();

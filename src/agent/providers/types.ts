@@ -13,6 +13,8 @@ export interface ToolCall {
   id: string;
   name: string;
   arguments: Record<string, unknown>;
+  thoughtSignature?: string;
+  rawPart?: Record<string, unknown>;
 }
 
 export interface Message {

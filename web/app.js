@@ -6,14 +6,6 @@ let isAssistantThinking = false;
 let isSpeakingEnabled = true;
 let speechRecognizer = null;
 
-// Member color mappings
-const memberColors = {
-  arjun: "#146EB4",
-  meera: "#FF9900",
-  riya: "#067D62",
-  kabir: "#9C27B0",
-};
-
 document.addEventListener("DOMContentLoaded", () => {
   initApp();
 });
@@ -24,6 +16,7 @@ function initApp() {
   setupChatHandlers();
   setupVoiceRecognition();
   setupQuickActions();
+  setupModalForms();
 }
 
 // ----------------------------------------------------------------------------
@@ -41,6 +34,14 @@ async function loadState() {
   }
 }
 
+function getMemberColor(name) {
+  if (!name || !currentState?.members) return "#146EB4";
+  const found = currentState.members.find(
+    (m) => m.name.toLowerCase() === name.toLowerCase(),
+  );
+  return found?.color || "#146EB4";
+}
+
 function renderDashboard(state) {
   if (!state) return;
 
@@ -50,6 +51,7 @@ function renderDashboard(state) {
   renderEvents(state.events || []);
   renderReminders(state.reminders || []);
   renderActivity(state.activity || []);
+  populateModalMembers(state.members || []);
 }
 
 function renderGreeting(state) {
@@ -60,7 +62,8 @@ function renderGreeting(state) {
   const neededGroceries = (state.groceries || []).filter((g) => g.status === "needed").length;
   const count = openChores + neededGroceries;
 
-  greetingEl.textContent = `Good day, Sharma-Rao family. ${count} item${count === 1 ? "" : "s"} need attention this week.`;
+  const familyName = state.members?.length > 0 ? "Sharma-Rao family" : "household";
+  greetingEl.textContent = `Good day, ${familyName}. ${count} item${count === 1 ? "" : "s"} need attention this week.`;
 }
 
 function renderChores(chores) {
@@ -72,20 +75,20 @@ function renderChores(chores) {
   if (countBadge) countBadge.textContent = openChores.length;
 
   if (openChores.length === 0) {
-    container.innerHTML = `<li class="empty-state">No chores yet. Say "add a chore" or use Add chore.</li>`;
+    container.innerHTML = `<li class="empty-state">No chores yet. Click "+ Add chore" or ask Homebase.</li>`;
     return;
   }
 
   container.innerHTML = openChores
     .map((c) => {
       const assigneeName = c.assignee || "Unassigned";
-      const color = memberColors[assigneeName.toLowerCase()] || "#888888";
+      const color = getMemberColor(assigneeName);
       return `
         <li class="item-row" data-id="${c.id}">
           <div class="item-left">
             <span class="item-title">${escapeHtml(c.title)}</span>
             <div class="item-meta">
-              <span class="effort-badge">Effort: ${c.effort}</span>
+              <span class="effort-badge">Effort: ${c.effort} pt${c.effort === 1 ? "" : "s"}</span>
               <span class="member-chip">
                 <span class="member-dot" style="background-color: ${color};"></span>
                 ${escapeHtml(assigneeName)}
@@ -110,7 +113,7 @@ function renderGroceries(groceries) {
   if (countBadge) countBadge.textContent = needed.length;
 
   if (needed.length === 0) {
-    container.innerHTML = `<li class="empty-state">Your list is empty. Say what you need and Homebase adds it.</li>`;
+    container.innerHTML = `<li class="empty-state">Your list is empty. Click "+ Add item" or ask Homebase.</li>`;
     return;
   }
 
@@ -147,7 +150,7 @@ function renderEvents(events) {
   if (countBadge) countBadge.textContent = events.length;
 
   if (events.length === 0) {
-    container.innerHTML = `<li class="empty-state">Nothing scheduled this week.</li>`;
+    container.innerHTML = `<li class="empty-state">Nothing scheduled this week. Click "+ Add event" to add one.</li>`;
     return;
   }
 
@@ -189,7 +192,6 @@ function findOverlaps(events) {
       const startB = new Date(b.start_at).getTime();
       const endB = new Date(b.end_at).getTime();
 
-      // Check time overlap
       if (startA < endB && startB < endA) {
         set.add(a.id);
         set.add(b.id);
@@ -205,14 +207,15 @@ function renderReminders(reminders) {
 
   const pending = reminders.filter((r) => r.status === "pending");
   if (pending.length === 0) {
-    container.innerHTML = `<li class="empty-state">No pending reminders.</li>`;
+    container.innerHTML = `<li class="empty-state">No pending reminders. Click "+ Remind member" to create one.</li>`;
     return;
   }
 
   container.innerHTML = pending
     .map((r) => {
       const d = new Date(r.remind_at);
-      const timeStr = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+      const timeStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " +
+        d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
       return `
         <li class="item-row">
           <div class="item-left">
@@ -250,6 +253,42 @@ function renderActivity(activities) {
 }
 
 // ----------------------------------------------------------------------------
+// Populate Modal Form Selects with Real Database Members
+// ----------------------------------------------------------------------------
+
+function populateModalMembers(members) {
+  const choreAssigneeSelect = document.getElementById("choreAssigneeSelect");
+  const reminderMemberSelect = document.getElementById("reminderMemberSelect");
+  const eventAttendeesContainer = document.getElementById("eventAttendeesContainer");
+
+  if (choreAssigneeSelect) {
+    const currentVal = choreAssigneeSelect.value;
+    choreAssigneeSelect.innerHTML = `<option value="">Unassigned</option>` +
+      members.map((m) => `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)} (${escapeHtml(m.role || "member")})</option>`).join("");
+    choreAssigneeSelect.value = currentVal;
+  }
+
+  if (reminderMemberSelect) {
+    const currentVal = reminderMemberSelect.value;
+    reminderMemberSelect.innerHTML = members
+      .map((m) => `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)} (${escapeHtml(m.role || "member")})</option>`)
+      .join("");
+    if (currentVal) reminderMemberSelect.value = currentVal;
+  }
+
+  if (eventAttendeesContainer) {
+    eventAttendeesContainer.innerHTML = members
+      .map((m) => `
+        <label class="attendee-label">
+          <input type="checkbox" name="attendee" value="${escapeHtml(m.name)}" checked>
+          <span>${escapeHtml(m.name)}</span>
+        </label>
+      `)
+      .join("");
+  }
+}
+
+// ----------------------------------------------------------------------------
 // Live SSE Stream for Live Activity (Phase 3 requirement)
 // ----------------------------------------------------------------------------
 
@@ -260,25 +299,19 @@ function setupEventsSSE() {
     try {
       const payload = JSON.parse(event.data);
       if (payload.type === "tool_call" || payload.type === "tool_result") {
-        addLiveActivityItem(payload.data?.tool || "tool", payload.type === "tool_result");
-        // Refresh dashboard data
+        addLiveActivityItem(payload.data?.tool || "tool");
         loadState();
       }
     } catch (err) {
       console.warn("SSE parse error:", err);
     }
   };
-
-  eventSource.onerror = () => {
-    // Reconnects automatically by browser
-  };
 }
 
-function addLiveActivityItem(toolName, isResult) {
+function addLiveActivityItem(toolName) {
   const container = document.getElementById("activityList");
   if (!container) return;
 
-  // Clear empty state if present
   if (container.querySelector(".empty-state")) {
     container.innerHTML = "";
   }
@@ -294,7 +327,6 @@ function addLiveActivityItem(toolName, isResult) {
 
   container.prepend(row);
 
-  // Settle fade after 1.5s per DESIGN.md section 5
   setTimeout(() => {
     row.classList.remove("highlight-new");
   }, 1500);
@@ -337,15 +369,13 @@ function setupChatHandlers() {
   });
 }
 
-async function sendUserMessage(text) {
+window.sendUserMessage = async function (text) {
   if (isAssistantThinking) return;
   isAssistantThinking = true;
 
-  // Append user bubble
   appendChatBubble("user", text);
   chatHistory.push({ role: "user", content: text });
 
-  // Show typing indicator
   showTypingIndicator();
 
   try {
@@ -370,7 +400,6 @@ async function sendUserMessage(text) {
       appendChatBubble("assistant", reply, data.toolCalls);
       chatHistory.push({ role: "assistant", content: reply });
       speakReply(reply);
-      // Reload state after assistant actions
       loadState();
     }
   } catch (err) {
@@ -381,7 +410,7 @@ async function sendUserMessage(text) {
   } finally {
     isAssistantThinking = false;
   }
-}
+};
 
 function appendChatBubble(role, text, toolCalls) {
   const thread = document.getElementById("chatThread");
@@ -467,7 +496,7 @@ function setupVoiceRecognition() {
     if (transcript) {
       const input = document.getElementById("assistantInput");
       if (input) input.value = transcript;
-      sendUserMessage(transcript);
+      window.sendUserMessage(transcript);
     }
   };
 
@@ -490,7 +519,6 @@ function speakReply(text) {
 
   try {
     window.speechSynthesis.cancel();
-    // Keep spoken reply concise (under 25 words per CONTENT.md)
     const shortText = text.split(".").slice(0, 2).join(".").trim();
     const utterance = new SpeechSynthesisUtterance(shortText);
     utterance.rate = 1.0;
@@ -513,7 +541,103 @@ function showVoiceToast(message) {
 }
 
 // ----------------------------------------------------------------------------
-// Action Buttons & Shortcuts
+// Modal Management & Dynamic Interactive Forms
+// ----------------------------------------------------------------------------
+
+window.openModal = function (modalId) {
+  const dialog = document.getElementById(modalId);
+  if (dialog) dialog.showModal();
+};
+
+window.closeModal = function (modalId) {
+  const dialog = document.getElementById(modalId);
+  if (dialog) dialog.close();
+};
+
+function setupModalForms() {
+  // Add Chore Form
+  const formAddChore = document.getElementById("formAddChore");
+  if (formAddChore) {
+    formAddChore.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const title = document.getElementById("choreTitleInput").value.trim();
+      const effort = document.getElementById("choreEffortInput").value;
+      const assignee = document.getElementById("choreAssigneeSelect").value;
+      const freq = document.getElementById("choreFrequencySelect").value;
+
+      if (!title) return;
+      window.closeModal("modalAddChore");
+      formAddChore.reset();
+
+      const prompt = `Add chore "${title}" with effort ${effort} (${freq})${assignee ? ` assigned to ${assignee}` : ""}.`;
+      window.sendUserMessage(prompt);
+    });
+  }
+
+  // Add Grocery Form
+  const formAddGrocery = document.getElementById("formAddGrocery");
+  if (formAddGrocery) {
+    formAddGrocery.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.getElementById("groceryNameInput").value.trim();
+      const qty = document.getElementById("groceryQtyInput").value.trim();
+      const cat = document.getElementById("groceryCategorySelect").value;
+
+      if (!name) return;
+      window.closeModal("modalAddGrocery");
+      formAddGrocery.reset();
+
+      const prompt = `Add ${name}${qty ? ` (${qty})` : ""} to the grocery list under ${cat}.`;
+      window.sendUserMessage(prompt);
+    });
+  }
+
+  // Add Event Form
+  const formAddEvent = document.getElementById("formAddEvent");
+  if (formAddEvent) {
+    formAddEvent.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const title = document.getElementById("eventTitleInput").value.trim();
+      const start = document.getElementById("eventStartInput").value;
+      const end = document.getElementById("eventEndInput").value;
+      const loc = document.getElementById("eventLocationInput").value.trim();
+
+      const checkboxes = document.querySelectorAll('#eventAttendeesContainer input[name="attendee"]:checked');
+      const attendees = Array.from(checkboxes).map((cb) => cb.value);
+
+      if (!title || !start || !end) return;
+      window.closeModal("modalAddEvent");
+      formAddEvent.reset();
+
+      const startIso = new Date(start).toISOString();
+      const endIso = new Date(end).toISOString();
+      const prompt = `Schedule event "${title}" from ${startIso} to ${endIso}${loc ? ` at ${loc}` : ""} for ${attendees.join(", ") || "family"}.`;
+      window.sendUserMessage(prompt);
+    });
+  }
+
+  // Add Reminder Form
+  const formAddReminder = document.getElementById("formAddReminder");
+  if (formAddReminder) {
+    formAddReminder.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const member = document.getElementById("reminderMemberSelect").value;
+      const message = document.getElementById("reminderMessageInput").value.trim();
+      const remindAt = document.getElementById("reminderTimeInput").value;
+
+      if (!member || !message || !remindAt) return;
+      window.closeModal("modalAddReminder");
+      formAddReminder.reset();
+
+      const remindIso = new Date(remindAt).toISOString();
+      const prompt = `Remind ${member} to "${message}" at ${remindIso}.`;
+      window.sendUserMessage(prompt);
+    });
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Action Buttons
 // ----------------------------------------------------------------------------
 
 function setupQuickActions() {
@@ -523,7 +647,7 @@ function setupQuickActions() {
       try {
         await fetch("/api/reset", { method: "POST" });
         await loadState();
-        appendChatBubble("assistant", "Demo household has been reset to starting state.");
+        appendChatBubble("assistant", "Demo household data has been reset to default.");
       } catch (err) {
         console.error("Reset error:", err);
       }
@@ -531,9 +655,18 @@ function setupQuickActions() {
   }
 }
 
-// Complete chore via assistant
+window.rebalanceChoresAction = function () {
+  window.sendUserMessage("Assign open chores fairly across all household members by effort points.");
+};
+
+window.findConflictsAction = function () {
+  window.sendUserMessage("What events or schedules conflict with each other this week?");
+};
+
 window.completeChore = function (choreId) {
-  sendUserMessage(`Complete chore #${choreId}`);
+  const chore = currentState?.chores?.find((c) => c.id === choreId);
+  const choreName = chore ? `"${chore.title}"` : `#${choreId}`;
+  window.sendUserMessage(`Mark chore ${choreName} (id: ${choreId}) as done.`);
 };
 
 // Escape HTML utility

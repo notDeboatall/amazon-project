@@ -882,3 +882,115 @@ body {
     transition: none;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Modal Dialog Styles (Interactive User Forms)                               */
+/* -------------------------------------------------------------------------- */
+
+.modal-dialog {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  max-width: 480px;
+  width: 90%;
+  margin: auto;
+  background-color: var(--card);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  font-family: inherit;
+}
+
+.modal-dialog::backdrop {
+  background-color: rgba(19, 25, 33, 0.6);
+  backdrop-filter: blur(2px);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: var(--text-muted);
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.modal-close-btn:hover {
+  color: var(--text);
+  background-color: #F0F2F2;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.form-input, .form-select {
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  outline: none;
+  font-family: inherit;
+  color: var(--text);
+  background-color: #FFFFFF;
+}
+
+.form-input:focus, .form-select:focus {
+  border-color: var(--orange);
+  box-shadow: var(--focus-ring);
+}
+
+.attendees-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.attendee-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px solid #F0F2F2;
+}

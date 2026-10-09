@@ -34,7 +34,7 @@ export class GeminiProvider implements LLMProvider {
       throw new Error("GEMINI_API_KEY is not set.");
     }
 
-    const model = process.env.GEMINI_MODEL ?? "gemini-2.0-flash";
+    const model = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
     // Convert messages to Gemini contents format
@@ -62,12 +62,17 @@ export class GeminiProvider implements LLMProvider {
         }
         if (msg.toolCalls && msg.toolCalls.length > 0) {
           for (const tc of msg.toolCalls) {
-            parts.push({
-              functionCall: {
-                name: tc.name,
-                args: tc.arguments,
-              },
-            });
+            if (tc.rawPart) {
+              parts.push(tc.rawPart);
+            } else {
+              parts.push({
+                functionCall: {
+                  name: tc.name,
+                  args: tc.arguments,
+                },
+                ...(tc.thoughtSignature ? { thoughtSignature: tc.thoughtSignature } : {}),
+              });
+            }
           }
         }
         if (parts.length > 0) {
@@ -124,36 +129,59 @@ export class GeminiProvider implements LLMProvider {
       body.tools = toolsConfig;
     }
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(20000),
-    });
+    const candidateModels = Array.from(
+      new Set([
+        process.env.GEMINI_MODEL,
+        "gemini-flash-lite-latest",
+        "gemini-flash-latest",
+        "gemini-3.5-flash-lite",
+      ].filter(Boolean) as string[]),
+    );
 
-    if (!response.ok) {
-      const errText = await response.text();
-      const err = new Error(`Gemini API error (${response.status}): ${errText}`);
-      Object.assign(err, { status: response.status });
-      throw err;
+    let lastError: Error | null = null;
+
+    for (const model of candidateModels) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(20000),
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as any;
+          return this.parseResponse(data);
+        }
+
+        const errText = await response.text();
+        const err = new Error(`Gemini API error (${response.status}): ${errText}`);
+        Object.assign(err, { status: response.status });
+        lastError = err;
+
+        if (response.status === 429 || response.status === 404 || response.status === 503) {
+          console.warn(`[Gemini] Model ${model} returned ${response.status}. Trying next available model...`);
+          continue;
+        }
+
+        throw err;
+      } catch (err: any) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        if (err.status === 429 || err.status === 404 || err.status === 503) {
+          continue;
+        }
+        throw err;
+      }
     }
 
-    const data = (await response.json()) as {
-      candidates?: Array<{
-        content?: {
-          parts?: Array<{
-            text?: string;
-            functionCall?: {
-              name: string;
-              args?: Record<string, unknown>;
-            };
-          }>;
-        };
-      }>;
-    };
+    throw lastError ?? new Error("All Gemini candidate models failed.");
+  }
 
+  private parseResponse(data: any): ChatResult {
     const candidate = data.candidates?.[0];
     const parts = candidate?.content?.parts ?? [];
 
@@ -166,9 +194,11 @@ export class GeminiProvider implements LLMProvider {
       }
       if (part.functionCall) {
         toolCalls.push({
-          id: `call_${Math.random().toString(36).slice(2, 9)}`,
+          id: part.functionCall.id || `call_${Math.random().toString(36).slice(2, 9)}`,
           name: part.functionCall.name,
-          arguments: part.functionCall.args ?? {},
+          arguments: (part.functionCall.args as Record<string, unknown>) ?? {},
+          thoughtSignature: part.thoughtSignature ?? part.thought_signature,
+          rawPart: part,
         });
       }
     }
