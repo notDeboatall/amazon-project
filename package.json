@@ -1,0 +1,28 @@
+{
+  "name": "homebase",
+  "version": "0.1.0",
+  "description": "Household chief of staff: an MCP server plus web UI for the Amazon Developer Hackathon (Alexa+ track).",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "seed": "tsx src/db/seed.ts",
+    "typecheck": "tsc --noEmit",
+    "smoke": "tsx scripts/smoke-test.ts",
+    "test:prompts": "tsx scripts/test-prompts.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "better-sqlite3": "^13.0.3",
+    "express": "^5.2.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

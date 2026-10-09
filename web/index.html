@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Homebase</title>
+  <style>
+    body { margin: 0; font-family: Arial, "Helvetica Neue", sans-serif; background: #EAEDED; color: #0F1111; }
+    header { background: #131921; color: #fff; padding: 16px; font-size: 21px; font-weight: 700; }
+    main { padding: 16px; }
+    pre { background: #fff; border: 1px solid #D5D9D9; border-radius: 8px; padding: 16px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <header>homebase</header>
+  <main>
+    <p>Server is running. The real UI is built in Phase 3 (see brain/TASKS.md).</p>
+    <pre id="out">Loading state…</pre>
+  </main>
+  <script>
+    fetch("/api/state").then(r => r.json()).then(s => {
+      document.getElementById("out").textContent = JSON.stringify(s, null, 2);
+    });
+  </script>
+</body>
+</html>
