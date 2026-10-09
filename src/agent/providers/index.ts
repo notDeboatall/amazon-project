@@ -1,8 +1,18 @@
+import { existsSync } from "node:fs";
 import type { LLMProvider, ChatArgs, ChatResult } from "./types.js";
 import { GeminiProvider } from "./gemini.js";
 import { GroqProvider } from "./groq.js";
 import { OllamaProvider } from "./ollama.js";
 import { getDemoResponse } from "../demo.js";
+
+// Ensure environment variables from .env are loaded
+if (existsSync(".env")) {
+  try {
+    process.loadEnvFile(".env");
+  } catch {
+    // Ignore if already loaded or on parse error
+  }
+}
 
 export * from "./types.js";
 export * from "./gemini.js";

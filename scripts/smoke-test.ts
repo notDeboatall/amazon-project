@@ -72,5 +72,25 @@ show("create_reminder (bad member)", await client.callTool({ name: "create_remin
   remind_at: "2026-10-14T12:00:00.000Z",
 } }));
 
+// --- Standout Features (Phase 4) ---
+// Rebalance chores
+show("rebalance_chores", await client.callTool({ name: "rebalance_chores", arguments: {} }));
+
+// Find conflicts (detects Thursday overlap: Football practice pickup vs Dentist appointment)
+show("find_conflicts (all members)", await client.callTool({ name: "find_conflicts", arguments: {
+  from: "2026-10-12T00:00:00.000Z",
+  to: "2026-10-18T23:59:59.000Z",
+} }));
+
+// Find conflicts (specifically Dad / Arjun traveling Thursday)
+show("find_conflicts (Arjun traveling Thursday)", await client.callTool({ name: "find_conflicts", arguments: {
+  from: "2026-10-15T00:00:00.000Z",
+  to: "2026-10-15T23:59:59.000Z",
+  member_name: "Arjun",
+} }));
+
+// Weekly summary
+show("weekly_summary", await client.callTool({ name: "weekly_summary", arguments: {} }));
+
 await client.close();
 console.log("\n✅ Smoke test complete.");

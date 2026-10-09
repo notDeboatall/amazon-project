@@ -10,7 +10,8 @@
     "seed": "tsx src/db/seed.ts",
     "typecheck": "tsc --noEmit",
     "smoke": "tsx scripts/smoke-test.ts",
-    "test:prompts": "tsx scripts/test-prompts.ts"
+    "test:prompts": "tsx scripts/test-prompts.ts",
+    "test:standout": "tsx scripts/test-standout.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",

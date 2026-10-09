@@ -1,0 +1,116 @@
+{
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/agent-skills/main/schema.json",
+  "name": "homebase",
+  "version": "1.0.0",
+  "displayName": "Homebase - Household Chief of Staff",
+  "description": "Voice-first household logistics skill for Alexa+. Manages chores, grocery lists, calendar events, schedule conflicts, and fair effort rebalancing over Streamable HTTP.",
+  "author": "Homebase Team",
+  "license": "MIT",
+  "protocol": {
+    "type": "mcp",
+    "transport": "streamable-http",
+    "endpoint": "/mcp",
+    "version": "2024-11-05"
+  },
+  "tools": [
+    {
+      "name": "list_members",
+      "description": "List all members of the household with roles and colors."
+    },
+    {
+      "name": "add_chore",
+      "description": "Add a new chore to the household chore board."
+    },
+    {
+      "name": "assign_chore",
+      "description": "Assign an existing chore to a household member by name."
+    },
+    {
+      "name": "complete_chore",
+      "description": "Mark a chore as done."
+    },
+    {
+      "name": "rebalance_chores",
+      "description": "Redistribute open chores fairly across all household members by effort points, taking into account age roles (parents, teens, kids)."
+    },
+    {
+      "name": "add_grocery_item",
+      "description": "Add an item to the household grocery list, merging quantities if already present."
+    },
+    {
+      "name": "list_groceries",
+      "description": "List all items on the grocery list grouped by category."
+    },
+    {
+      "name": "add_event",
+      "description": "Add a calendar event for one or more household members."
+    },
+    {
+      "name": "list_events",
+      "description": "List calendar events in a date range, optionally filtering to one member."
+    },
+    {
+      "name": "find_conflicts",
+      "description": "Check for calendar conflicts, overlapping appointments, double-booked members, or schedule breaks when a member travels."
+    },
+    {
+      "name": "create_reminder",
+      "description": "Create a time-based reminder for a specific household member."
+    },
+    {
+      "name": "weekly_summary",
+      "description": "Get a comprehensive weekly summary of events, open chores, needed groceries, and active reminders."
+    }
+  ],
+  "intents": [
+    {
+      "name": "RebalanceChores",
+      "sampleUtterances": [
+        "Assign dishes and laundry fairly this week.",
+        "Rebalance our chores fairly.",
+        "Divide open chores equally by effort."
+      ],
+      "primaryTool": "rebalance_chores"
+    },
+    {
+      "name": "FindScheduleConflicts",
+      "sampleUtterances": [
+        "Dad's traveling Thursday, what does that break?",
+        "Are there any schedule conflicts this week?",
+        "Who is double-booked on Thursday?"
+      ],
+      "primaryTool": "find_conflicts"
+    },
+    {
+      "name": "WeeklyBriefing",
+      "sampleUtterances": [
+        "What's happening this week?",
+        "Give me a weekly summary.",
+        "Household overview for the week."
+      ],
+      "primaryTool": "weekly_summary"
+    },
+    {
+      "name": "AddGrocery",
+      "sampleUtterances": [
+        "We're out of milk and eggs.",
+        "Add sourdough bread to the grocery list.",
+        "Buy 2 packs of batteries."
+      ],
+      "primaryTool": "add_grocery_item"
+    },
+    {
+      "name": "CreateReminder",
+      "sampleUtterances": [
+        "Remind Meera about the dentist on Thursday at 4.",
+        "Remind Riya about math homework at 6pm."
+      ],
+      "primaryTool": "create_reminder"
+    }
+  ],
+  "privacy": {
+    "storage": "Local SQLite database on device",
+    "cloudRetention": "Zero cloud retention; strictly $0 budget and zero credit card required",
+    "telemetry": "None"
+  }
+}

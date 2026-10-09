@@ -4,6 +4,7 @@ import { registerGroceryTools } from "./tools/groceries.js";
 import { registerChoreTools } from "./tools/chores.js";
 import { registerEventTools } from "./tools/events.js";
 import { registerReminderTools } from "./tools/reminders.js";
+import { registerSummaryTools } from "./tools/summary.js";
 
 /** Builds a fresh MCP server with every Homebase tool registered. */
 export function createHomebaseServer(): McpServer {
@@ -13,6 +14,6 @@ export function createHomebaseServer(): McpServer {
   registerChoreTools(server);
   registerEventTools(server);
   registerReminderTools(server);
-  // Next up (see brain/TASKS.md): conflicts, rebalance, summary.
+  registerSummaryTools(server);
   return server;
 }
